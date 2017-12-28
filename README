@@ -5,5 +5,8 @@
 
 Files:
     HoleFilling.cpp     - The Main File which runs the program.
+    Pixel.h             - A header file for the Pixel Class.
+    Pixel.cpp           - A file for the Pixel Class implementation.
+    HoleException.h     - Exception Classes for the Hole Filling program.
     README              - This File.
 
