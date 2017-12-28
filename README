@@ -1,12 +1,38 @@
-==============================================
-=                Hole Filling                =
-==============================================
+========================================================
+=                     Hole Filling                     =
+=                      Itai Tagar                      =
+========================================================
 
 
 Files:
-    HoleFilling.cpp     - The Main File which runs the program.
-    Pixel.h             - A header file for the Pixel Class.
-    Pixel.cpp           - A file for the Pixel Class implementation.
-    HoleException.h     - Exception Classes for the Hole Filling program.
-    README              - This File.
+	HoleFilling.cpp		- The Main File which runs the program.
+	Pixel.h			- A header file for the Pixel Class.
+	Pixel.cpp		- A file for the Pixel Class implementation.
+	Hole.h			- A header file for the Hole Class.
+	Hole.cpp		- A file for the Hole Class implementation.
+	HoleException.h		- Exception Classes for the Hole Filling program.
+	Answers.pdf		- Answers for the questions in the exercise description.
+	Makefile		- Makefile for this program.
+	README			- This File.
 
+
+Implementation Details:
+	My implementation works as follows:
+	After validating and setting all the parameters given by the user for the program, 
+	the program reads the image from the given path (using openCV) and converting this
+	image into a 2D-array of floats, this array is allocated dynamically on the Heap.
+	Then, we search for a missing pixel, i.e. an index in the 2D-array with 
+	value (-1). Once we found a missing pixel, we then find the entire hole in the image
+	(as well as finding it's boundary) using simple BFS from the missing pixel with	
+	the given pixel connectivity value. Note that if the image does not contain a hole,
+	we won't find a pixel which satisfies that it's value is (-1) and then an Exception
+	is thrown and the program ends. Now that we have the pixels that make up the hole
+	and it's boundary we simply apply the fill as described in the exercise description.
+
+	Note that I created a Deep-Copy of the original image in order that the fill procedure
+	will not alter the original image, in case the original image can be modified we could
+	skip this copy and pass the original image as a parameter to the fill function.
+
+	For the ease of implementation I've created a Pixel class that encapsulate a single
+	pixel in the image, as well as Hole class which represent a hole in the image.
+	

@@ -12,6 +12,22 @@
 #include "Pixel.h"
 
 
+/*-----=  Definitions  =-----*/
+
+
+/**
+ * @def CORD_COUNT 2
+ * @brief A Macro that sets the number of coordinates for a pixel.
+ */
+#define CORD_COUNT 2
+
+/**
+ * @def DEFAULT_CONNECTIVITY_MASK {1, -1}
+ * @brief A Macro that sets the connectivity mask for the default pixel connectivity.
+ */
+#define DEFAULT_CONNECTIVITY_MASK {1, -1}
+
+
 /*-----=  Class Implementation  =-----*/
 
 
@@ -47,7 +63,7 @@ std::ostream& operator<<(std::ostream &os, const Pixel &pixel)
  */
 void Pixel::setNeighbours(const int connectivity, const int maxX, const int maxY)
 {
-    int connectivityMask[2] = {1, -1};
+    int connectivityMask[CORD_COUNT] = DEFAULT_CONNECTIVITY_MASK;
 
     // Set the 4-connectivity neighbours.
     for (int mask : connectivityMask)

@@ -166,11 +166,11 @@ static int validateNumericArguments(const char *epsilon, const char *z, const ch
  * @param cols The number of columns in the image.
  * @return A Pixel class represent a missing pixel in the image.
  */
-static Pixel findMissingPixel(float **image, const size_t rows, const size_t cols)
+static Pixel findMissingPixel(float **image, const int rows, const int cols)
 {
-    for (unsigned int x = INITIAL_ROW ; x < rows; ++x)
+    for (int x = INITIAL_ROW ; x < rows; ++x)
     {
-        for (unsigned int y = INITIAL_COLUMN; y < cols; ++y)
+        for (int y = INITIAL_COLUMN; y < cols; ++y)
         {
             if (image[x][y] == MISSING_VALUE)
             {
@@ -191,7 +191,7 @@ static Pixel findMissingPixel(float **image, const size_t rows, const size_t col
  * @param connectivity The pixel connectivity value.
  * @return A Hole class representing the hole in the image.
  */
-static Hole calculateHole(float **image, const size_t rows, const size_t cols,
+static Hole calculateHole(float **image, const int rows, const int cols,
                           Pixel missingPixel, const int connectivity)
 {
     Hole hole;
@@ -200,10 +200,10 @@ static Hole calculateHole(float **image, const size_t rows, const size_t cols,
     std::deque<Pixel> pixelQueue;
     // TODO: Change the visited array.
     bool **visited = new bool *[rows];
-    for (unsigned int i = 0; i < rows; ++i)
+    for (int i = 0; i < rows; ++i)
     {
         visited[i] = new bool[cols];
-        for (unsigned int j = 0; j < cols; ++j)
+        for (int j = 0; j < cols; ++j)
         {
             visited[i][j] = false;
         }
@@ -248,7 +248,7 @@ static Hole calculateHole(float **image, const size_t rows, const size_t cols,
     }
 
     // Clear resources.
-    for (unsigned int i = 0; i < rows; ++i)
+    for (int i = 0; i < rows; ++i)
     {
         delete[] visited[i];
         visited[i] = nullptr;
@@ -296,9 +296,46 @@ static void fillImageHole(float ***image, const Hole hole,
             numerator += weightedValue * yValue;
             denominator += weightedValue;
         }
+        assert(denominator != 0);
         float newValue = numerator / denominator;
         (*image)[x.getX()][x.getY()] = newValue;
     }
+}
+
+
+/*-----=  Image Handling Functions  =-----*/
+
+
+static float** convertImageToArray(const cv::Mat image)
+{
+
+}
+
+/**
+ * @brief Display a given image with a given window name.
+ * @param image The image to display.
+ * @param windowName The window name in the displayed image window.
+ */
+static void displayImage(const cv::Mat image, const char *windowName)
+{
+    cv::namedWindow(windowName);
+    cv::imshow(windowName, image);
+    cv::waitKey(0);
+}
+
+
+/*-----=  Cleanup Functions  =-----*/
+
+
+static void clearResources(float ***image, const int rows)
+{
+    for (int i = 0; i < rows; ++i)
+    {
+        delete[] (*image)[i];
+        (*image)[i] = nullptr;
+    }
+    delete[] *image;
+    *image = nullptr;
 }
 
 
@@ -331,9 +368,12 @@ int main(int argc, char *argv[])
     assert(epsilon != EPSILON_INITIAL && z != Z_INITIAL);
     const int connectivity = std::stoi(connectivityArgument);
 
+    // Read the image.
+    cv::Mat imageCV = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+
+    int rows = 3;
+    int cols = 4;
     float **image = new float *[3];
-    size_t rows = 3;
-    size_t cols = 4;
     for (int i = 0; i < 3; ++i)
     {
         image[i] = new float[4];
@@ -353,7 +393,6 @@ int main(int argc, char *argv[])
         Pixel missingPixel = findMissingPixel(image, rows, cols);
         // From this pixel calculate the hole using BFS.
         Hole hole = calculateHole(image, rows, cols, missingPixel, connectivity);
-
         // Copy the original image and fill the copy.
         float **filledImage = new float *[rows];
         for (int i = 0; i < rows; ++i)
@@ -364,17 +403,12 @@ int main(int argc, char *argv[])
                 filledImage[i][j] = image[i][j];
             }
         }
-
+        // Fill.
         fillImageHole(&filledImage, hole, defaultWeightedFunction);
 
         // Clear resources.
-        for (unsigned int i = 0; i < rows; ++i)
-        {
-            delete[] filledImage[i];
-            filledImage[i] = nullptr;
-        }
-        delete[] filledImage;
-        filledImage = nullptr;
+        clearResources(&filledImage, rows);
+        clearResources(&image, rows);
 
         return EXIT_SUCCESS;
     }

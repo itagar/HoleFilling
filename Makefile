@@ -1,6 +1,6 @@
 CXX= g++
 CXXFLAGS= -c -Wextra -Wall -Wvla -std=c++11 -DNDEBUG
-CODEFILES= HoleFilling.tar HoleFilling.hpp Pixel.cpp Pixel.h Hole.cpp Hole.h Pixel.h Makefile README
+CODEFILES= HoleFilling.tar HoleFilling.hpp Pixel.cpp Pixel.h Hole.cpp Hole.h Pixel.h HoleException.h Makefile README
 
 
 # Default
@@ -8,8 +8,8 @@ default: HoleFilling
 
 
 # Executables
-HoleFilling: HoleFilling.o Pixel.o Hole.o
-	$(CXX) HoleFilling.o Pixel.o Hole.o -o HoleFilling
+HoleFilling: HoleFilling.o Hole.o Pixel.o
+	$(CXX) HoleFilling.o Pixel.o Hole.o -o HoleFilling `pkg-config --cflags --libs opencv`
 
 
 # Object Files
@@ -31,4 +31,3 @@ tar:
 # Other Targets
 clean:
 	-rm -vf *.o HoleFilling
-
