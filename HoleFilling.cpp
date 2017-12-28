@@ -76,6 +76,32 @@
  */
 #define INITIAL_COLUMN 0
 
+/**
+ * @def EPSILON_INITIAL -1
+ * @brief A Macro that sets the initial value for the epsilon parameter.
+ */
+#define EPSILON_INITIAL -1
+
+/**
+ * @def Z_INITIAL -1
+ * @brief A Macro that sets the initial value for the z parameter.
+ */
+#define Z_INITIAL -1
+
+
+/*-----=  Program Arguments Functions  =-----*/
+
+
+/**
+ * @brief The epsilon value used in the default weighted function.
+ */
+float epsilon = EPSILON_INITIAL;
+
+/**
+ * @brief The z value used in the default weighted function.
+ */
+float z = Z_INITIAL;
+
 
 /*-----=  Program Arguments Functions  =-----*/
 
@@ -233,15 +259,46 @@ static Hole calculateHole(float **image, const size_t rows, const size_t cols,
     return hole;
 }
 
-static float defaultWeightedFunction(const Pixel lhs, const Pixel rhs, const float z, const float epsilon)
+/**
+ * @brief Apply the default weighted function on the given Pixels.
+ * @param lhs The first pixel.
+ * @param rhs The second pixel.
+ * @return The weighted value of the given pixels.
+ */
+static float defaultWeightedFunction(const Pixel lhs, const Pixel rhs)
 {
-    return 1;
+    double norm = std::pow(lhs.getX() - rhs.getX(), 2) + std::pow(lhs.getY() - rhs.getY(), 2);
+    norm = std::sqrt(norm);
+
+    float weightValue = (float) (1 / (std::pow(norm, z) + epsilon));
+    return weightValue;
 }
 
-static void fillImageHole(float ***image, const Hole hole, const float z, const float epsilon,
-                          float (*weightedFunction)(const Pixel, const Pixel, const float, const float))
+/**
+ * @brief Fill the image hole of the given image.
+ * @param image A pointer to the image to fix.
+ * @param hole The hole in the image.
+ * @param weightedFunction The weighted function used in the fill process.
+ */
+static void fillImageHole(float ***image, const Hole hole,
+                          float (*weightedFunction)(const Pixel, const Pixel))
 {
-
+    for (Pixel x : hole.getHolePixels())
+    {
+        // For every pixel x in the hole we update it's value using the
+        // weighted function and all the pixels in the hole boundary.
+        float numerator = 0;
+        float denominator = 0;
+        for (Pixel y : hole.getHoleBoundary())
+        {
+            float yValue = (*image)[y.getX()][y.getY()];
+            float weightedValue = weightedFunction(x, y);
+            numerator += weightedValue * yValue;
+            denominator += weightedValue;
+        }
+        float newValue = numerator / denominator;
+        (*image)[x.getX()][x.getY()] = newValue;
+    }
 }
 
 
@@ -269,8 +326,9 @@ int main(int argc, char *argv[])
     const char *zArgument = argv[Z_ARG_INDEX];
     const char *connectivityArgument = argv[CONNECTIVITY_ARG_INDEX];
     validateNumericArguments(epsilonArgument, zArgument, connectivityArgument);
-    const float epsilon = std::stof(epsilonArgument);
-    const float z = std::stof(zArgument);
+    epsilon = std::stof(epsilonArgument);
+    z = std::stof(zArgument);
+    assert(epsilon != EPSILON_INITIAL && z != Z_INITIAL);
     const int connectivity = std::stoi(connectivityArgument);
 
     float **image = new float *[3];
@@ -292,12 +350,9 @@ int main(int argc, char *argv[])
     try
     {
         // Find the first missing pixel in the hole.
-        Pixel missingPixel = findMissingPixel(image, 3, 4);
-        std::cout << missingPixel << std::endl;
-        std::cout << std::endl;
-        // From this pixel. calculate the hole using BFS.
-        Hole hole = calculateHole(image, 3, 4, missingPixel, connectivity);
-        std::cout << hole << std::endl;
+        Pixel missingPixel = findMissingPixel(image, rows, cols);
+        // From this pixel calculate the hole using BFS.
+        Hole hole = calculateHole(image, rows, cols, missingPixel, connectivity);
 
         // Copy the original image and fill the copy.
         float **filledImage = new float *[rows];
@@ -309,7 +364,8 @@ int main(int argc, char *argv[])
                 filledImage[i][j] = image[i][j];
             }
         }
-        fillImageHole(&filledImage, hole, z, epsilon, defaultWeightedFunction);
+
+        fillImageHole(&filledImage, hole, defaultWeightedFunction);
 
         // Clear resources.
         for (unsigned int i = 0; i < rows; ++i)
