@@ -21,7 +21,7 @@
  * @param x The X coordinate in the plane.
  * @param y The Y coordinate in the plane.
  */
-Pixel::Pixel(const cordType x, const cordType y) : _x(x), _y(y)
+Pixel::Pixel(const int x, const int y) : _x(x), _y(y)
 {
 
 }
@@ -38,7 +38,14 @@ std::ostream& operator<<(std::ostream &os, const Pixel &pixel)
     return os;
 }
 
-void Pixel::setNeighbours(const int connectivity, const cordType maxX, const cordType maxY)
+/**
+ * @brief Set the neighbours of the Pixel according to the given connectivity value.
+ *        The function ignore neighbours that are outside of the image boundaries.
+ * @param connectivity The pixel connectivity value.
+ * @param maxX The max value in the X coordinates.
+ * @param maxY The max value in the Y coordinates.
+ */
+void Pixel::setNeighbours(const int connectivity, const int maxX, const int maxY)
 {
     int connectivityMask[2] = {1, -1};
 
@@ -60,6 +67,24 @@ void Pixel::setNeighbours(const int connectivity, const cordType maxX, const cor
 
     if (connectivity == 8)
     {
-        // TODO: continue this.
+        // Add the 8-connectivity neighbours.
+        for (int mask : connectivityMask)
+        {
+            if (_x + mask >= 0 && _x + mask < maxX)
+            {
+                if (_y + mask >= 0 && _y + mask < maxY)
+                {
+                    // If this neighbour is in the image.
+                    _neighbours.push_back(Pixel(_x + mask, _y + mask));
+                }
+
+                if (_y - mask >= 0 && _y - mask < maxY)
+                {
+                    // If this neighbour is in the image.
+                    _neighbours.push_back(Pixel(_x + mask, _y - mask));
+                }
+            }
+        }
     }
+
 }

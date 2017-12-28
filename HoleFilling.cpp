@@ -13,6 +13,7 @@
 #include <deque>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <cmath>
 #include "Pixel.h"
 #include "Hole.h"
 #include "HoleException.h"
@@ -76,7 +77,7 @@
 #define INITIAL_COLUMN 0
 
 
-/*-----=  Program Arguments  =-----*/
+/*-----=  Program Arguments Functions  =-----*/
 
 
 /**
@@ -127,6 +128,18 @@ static int validateNumericArguments(const char *epsilon, const char *z, const ch
     return EXIT_SUCCESS;
 }
 
+
+/*-----=  Hole Filling Functions  =-----*/
+
+
+/**
+ * @brief Finds a missing pixel in the given image.
+ *        If there is no missing pixel the function throws an exception.
+ * @param image The image to search in.
+ * @param rows The number of rows in the image.
+ * @param cols The number of columns in the image.
+ * @return A Pixel class represent a missing pixel in the image.
+ */
 static Pixel findMissingPixel(float **image, const size_t rows, const size_t cols)
 {
     for (unsigned int x = INITIAL_ROW ; x < rows; ++x)
@@ -143,6 +156,15 @@ static Pixel findMissingPixel(float **image, const size_t rows, const size_t col
     throw NoMissingPixelException();
 }
 
+/**
+ * @brief Calculate the hole in the image from a given missing pixel using BFS.
+ * @param image The image containing the hole.
+ * @param rows The number of rows in the image.
+ * @param cols The number of columns in the image.
+ * @param missingPixel A missing pixel inside the hole.
+ * @param connectivity The pixel connectivity value.
+ * @return A Hole class representing the hole in the image.
+ */
 static Hole calculateHole(float **image, const size_t rows, const size_t cols,
                           Pixel missingPixel, const int connectivity)
 {
@@ -150,6 +172,7 @@ static Hole calculateHole(float **image, const size_t rows, const size_t cols,
 
     // Set data for the BFS algorithm.
     std::deque<Pixel> pixelQueue;
+    // TODO: Change the visited array.
     bool **visited = new bool *[rows];
     for (unsigned int i = 0; i < rows; ++i)
     {
@@ -174,12 +197,12 @@ static Hole calculateHole(float **image, const size_t rows, const size_t cols,
         hole.addHolePixels(currentPixel);
 
         // Get the pixel neighbours according the the pixel connectivity.
-        currentPixel.setNeighbours(connectivity, (const cordType) rows, (const cordType) cols);
+        currentPixel.setNeighbours(connectivity, (const int) rows, (const int) cols);
         // Traverse the neighbours.
         for (Pixel neighbour : currentPixel.getNeighbours())
         {
-            cordType currentX = neighbour.getX();
-            cordType currentY = neighbour.getY();
+            int currentX = neighbour.getX();
+            int currentY = neighbour.getY();
             if (!visited[currentX][currentY])
             {
                 // If this pixel hasn't been visited we process it and mark as visited.
@@ -206,16 +229,28 @@ static Hole calculateHole(float **image, const size_t rows, const size_t cols,
     }
     delete[] visited;
     visited = nullptr;
-    
+
     return hole;
 }
+
+static float defaultWeightedFunction(const Pixel lhs, const Pixel rhs, const float z, const float epsilon)
+{
+    return 1;
+}
+
+static void fillImageHole(float ***image, const Hole hole, const float z, const float epsilon,
+                          float (*weightedFunction)(const Pixel, const Pixel, const float, const float))
+{
+
+}
+
 
 /*-----=  Main  =-----*/
 
 
-// TODO: Description.
 /**
- * @brief The main function that runs the program.
+ * @brief The main function that runs the program. It receives parameters from the user
+ *        and runs the Hole Filling on the image given by the user.
  * @param argc The number of given arguments.
  * @param argv[] The arguments from the user.
  * @return 0 if the program ended successfully, 1 otherwise.
@@ -229,44 +264,67 @@ int main(int argc, char *argv[])
         std::cerr << "Usage: HoleFilling <image_path> <epsilon> <z>" << std::endl;
         exit(EXIT_FAILURE);
     }
-
     const char *imagePath = argv[IMAGE_PATH_ARG_INDEX];
     const char *epsilonArgument = argv[EPSILON_ARG_INDEX];
     const char *zArgument = argv[Z_ARG_INDEX];
     const char *connectivityArgument = argv[CONNECTIVITY_ARG_INDEX];
-
     validateNumericArguments(epsilonArgument, zArgument, connectivityArgument);
     const float epsilon = std::stof(epsilonArgument);
     const float z = std::stof(zArgument);
     const int connectivity = std::stoi(connectivityArgument);
 
-    float **array = new float *[3];
+    float **image = new float *[3];
+    size_t rows = 3;
+    size_t cols = 4;
     for (int i = 0; i < 3; ++i)
     {
-        array[i] = new float[4];
+        image[i] = new float[4];
         for (int j = 0; j < 4; ++j)
         {
-            array[i][j] = 0;
+            image[i][j] = 0;
         }
     }
-    array[1][1] = -1;
-    array[1][2] = -1;
-    array[2][2] = -1;
+    image[1][1] = -1;
+    image[1][2] = -1;
+    image[2][2] = -1;
+    image[2][0] = -1;
 
     try
     {
-        Pixel p = findMissingPixel(array, 3, 4);
-        std::cout << p << std::endl;
+        // Find the first missing pixel in the hole.
+        Pixel missingPixel = findMissingPixel(image, 3, 4);
+        std::cout << missingPixel << std::endl;
         std::cout << std::endl;
-
-        Hole hole = calculateHole(array, 3, 4, p, 4);
+        // From this pixel. calculate the hole using BFS.
+        Hole hole = calculateHole(image, 3, 4, missingPixel, connectivity);
         std::cout << hole << std::endl;
+
+        // Copy the original image and fill the copy.
+        float **filledImage = new float *[rows];
+        for (int i = 0; i < rows; ++i)
+        {
+            filledImage[i] = new float[cols];
+            for (int j = 0; j < cols; ++j)
+            {
+                filledImage[i][j] = image[i][j];
+            }
+        }
+        fillImageHole(&filledImage, hole, z, epsilon, defaultWeightedFunction);
+
+        // Clear resources.
+        for (unsigned int i = 0; i < rows; ++i)
+        {
+            delete[] filledImage[i];
+            filledImage[i] = nullptr;
+        }
+        delete[] filledImage;
+        filledImage = nullptr;
+
+        return EXIT_SUCCESS;
     }
     catch (HoleException& exception)
     {
         std::cout << exception.what() << std::endl;
         return EXIT_SUCCESS;
     }
-
-    return EXIT_SUCCESS;
 }

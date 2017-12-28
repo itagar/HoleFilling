@@ -17,15 +17,6 @@
 #include <vector>
 
 
-/*-----=  Type Definitions  =-----*/
-
-
-/**
- * @brief A Type Definition for a coordinate of a pixel in the image.
- */
-typedef unsigned int cordType;
-
-
 /*-----=  Class Declaration  =-----*/
 
 
@@ -44,19 +35,19 @@ public:
      * @param y The Y coordinate in the plane.
      * @param intensity The pixel intensity.
      */
-    Pixel(const cordType x, const cordType y);
+    Pixel(const int x, const int y);
 
     /**
      * @brief Returns the X coordinate value.
      * @return The X coordinate value.
      */
-    cordType getX() const { return _x; };
+    int getX() const { return _x; };
 
     /**
      * @brief Returns the Y coordinate value.
      * @return The Y coordinate value.
      */
-    cordType getY() const { return _y; };
+    int getY() const { return _y; };
 
     /**
      * @brief Returns the Pixel's neighbours.
@@ -64,7 +55,14 @@ public:
      */
     std::vector<Pixel> getNeighbours() const { return _neighbours; };
 
-    void setNeighbours(const int connectivity, const cordType maxX, const cordType maxY);
+    /**
+     * @brief Set the neighbours of the Pixel according to the given connectivity value.
+     *        The function ignore neighbours that are outside of the image boundaries.
+     * @param connectivity The pixel connectivity value.
+     * @param maxX The max value in the X coordinates.
+     * @param maxY The max value in the Y coordinates.
+     */
+    void setNeighbours(const int connectivity, const int maxX, const int maxY);
 
     /**
      * @brief operator << for stream insertion.
@@ -75,8 +73,8 @@ public:
     friend std::ostream& operator<<(std::ostream &os, const Pixel &pixel);
 
 private:
-    cordType _x;  // The X coordinate value for the Pixel.
-    cordType _y;  // The Y coordinate value for the Pixel.
+    int _x;  // The X coordinate value for the Pixel.
+    int _y;  // The Y coordinate value for the Pixel.
     std::vector<Pixel> _neighbours;  // The Pixel's neighbours.
 
 };

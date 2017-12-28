@@ -42,12 +42,28 @@ public:
      */
     friend std::ostream& operator<<(std::ostream &os, const Hole &hole);
 
+    /**
+     * @brief Returns the Hole's pixels.
+     * @return The Hole's pixels.
+     */
     const holeSet getHolePixels() const { return _holePixels; }
 
+    /**
+     * @brief Returns the Hole's boundary pixels.
+     * @return The Hole's boundary pixels.
+     */
     const holeSet getHoleBoundary() const { return _holeBoundary; }
 
+    /**
+     * @brief Adds new pixel to the Hole.
+     * @param pixel The pixel to add.
+     */
     void addHolePixels(const Pixel pixel) { _holePixels.push_back(pixel); }
 
+    /**
+     * @brief Adds new pixel to the Hole's boundary.
+     * @param pixel The pixel to add.
+     */
     void addHoleBoundary(const Pixel pixel) { _holeBoundary.push_back(pixel); }
 
 private:
