@@ -192,7 +192,7 @@ static Pixel findMissingPixel(float **image, const int rows, const int cols)
  * @return A Hole class representing the hole in the image.
  */
 static Hole calculateHole(float **image, const int rows, const int cols,
-                          Pixel missingPixel, const int connectivity)
+                          Pixel &missingPixel, const int connectivity)
 {
     Hole hole;
 
@@ -219,11 +219,14 @@ static Hole calculateHole(float **image, const int rows, const int cols,
         pixelQueue.pop_front();
         // Mark as visited.
         visited[currentPixel.getX()][currentPixel.getY()] = true;
+
         // Add the current pixel to the hole.
+        assert(currentPixel.getNeighbours().empty());
+        currentPixel.setNeighbours(connectivity, rows, cols);
         hole.addHolePixels(currentPixel);
 
         // Get the pixel neighbours according the the pixel connectivity.
-        currentPixel.setNeighbours(connectivity, (const int) rows, (const int) cols);
+        currentPixel.setNeighbours(connectivity, rows, cols);
         // Traverse the neighbours.
         for (Pixel neighbour : currentPixel.getNeighbours())
         {
@@ -302,11 +305,45 @@ static void fillImageHole(float ***image, const Hole hole,
     }
 }
 
+/**
+ * @brief Fill the image hole of the given image.
+ * @param image A pointer to the image to fix.
+ * @param hole The hole in the image.
+ * @param weightedFunction The weighted function used in the fill process.
+ */
+static void neighboursFillImageHole(float ***image, const Hole hole,
+                                    float (*weightedFunction)(const Pixel, const Pixel))
+{
+    for (Pixel x : hole.getHolePixels())
+    {
+        // For every pixel x in the hole we update it's value using the
+        // weighted function and all the pixels in the hole boundary.
+        float numerator = 0;
+        float denominator = 0;
+
+        assert(!x.getNeighbours().empty());
+        for (Pixel y : x.getNeighbours())
+        {
+            float yValue = (*image)[y.getX()][y.getY()];
+            if (yValue == MISSING_VALUE)
+            {
+                continue;
+            }
+
+            float weightedValue = weightedFunction(x, y);
+            numerator += weightedValue * yValue;
+            denominator += weightedValue;
+        }
+        assert(denominator != 0);
+        float newValue = numerator / denominator;
+        (*image)[x.getX()][x.getY()] = newValue;
+    }
+}
 
 /*-----=  Image Handling Functions  =-----*/
 
 
-static float** convertImageToArray(const cv::Mat image)
+static float **convertImageToArray(const cv::Mat &image)
 {
 
 }
@@ -316,9 +353,9 @@ static float** convertImageToArray(const cv::Mat image)
  * @param image The image to display.
  * @param windowName The window name in the displayed image window.
  */
-static void displayImage(const cv::Mat image, const char *windowName)
+static void displayImage(const cv::Mat &image, const char *windowName)
 {
-    cv::namedWindow(windowName);
+    cv::namedWindow(windowName, CV_WINDOW_NORMAL);
     cv::imshow(windowName, image);
     cv::waitKey(0);
 }
@@ -327,6 +364,11 @@ static void displayImage(const cv::Mat image, const char *windowName)
 /*-----=  Cleanup Functions  =-----*/
 
 
+/**
+ * @brief Clear memory allocation for the given image.
+ * @param image The image memory to free.
+ * @param rows The number of rows in that image.
+ */
 static void clearResources(float ***image, const int rows)
 {
     for (int i = 0; i < rows; ++i)
@@ -368,16 +410,13 @@ int main(int argc, char *argv[])
     assert(epsilon != EPSILON_INITIAL && z != Z_INITIAL);
     const int connectivity = std::stoi(connectivityArgument);
 
-    // Read the image.
-    cv::Mat imageCV = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
-
-    int rows = 3;
-    int cols = 4;
-    float **image = new float *[3];
-    for (int i = 0; i < 3; ++i)
+    int rows = 250;
+    int cols = 250;
+    float **image = new float *[rows];
+    for (int i = 0; i < rows; ++i)
     {
-        image[i] = new float[4];
-        for (int j = 0; j < 4; ++j)
+        image[i] = new float[cols];
+        for (int j = 0; j < cols; ++j)
         {
             image[i][j] = 0;
         }

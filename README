@@ -6,14 +6,13 @@
 
 Files:
 	HoleFilling.cpp		- The Main File which runs the program.
-	Pixel.h			- A header file for the Pixel Class.
-	Pixel.cpp		- A file for the Pixel Class implementation.
-	Hole.h			- A header file for the Hole Class.
-	Hole.cpp		- A file for the Hole Class implementation.
+	Pixel.h			    - A header file for the Pixel Class.
+	Pixel.cpp		    - A file for the Pixel Class implementation.
+	Hole.h			    - A header file for the Hole Class.
+	Hole.cpp		    - A file for the Hole Class implementation.
 	HoleException.h		- Exception Classes for the Hole Filling program.
-	Answers.pdf		- Answers for the questions in the exercise description.
-	Makefile		- Makefile for this program.
-	README			- This File.
+	Makefile		    - Makefile for this program.
+	README			    - This File.
 
 
 Implementation Details:
@@ -36,3 +35,19 @@ Implementation Details:
 	For the ease of implementation I've created a Pixel class that encapsulate a single
 	pixel in the image, as well as Hole class which represent a hole in the image.
 	
+
+Answers:
+    4.  If there are m boundary pixels and n pixels inside the hole, then our algorithm
+        perform for each pixel x inside the hole the value change according to the
+        weighted formula. In this formula we have to iterate through every pixel in the
+        boundary. So for every pixel in the hole we do O(m) calculations, and we have n
+        pixels in the hole so we get total time of O(m*n).
+        We note that m = O(n) since m <= 4*n in 4-connectivity and m <= 8*n in 8-connectivity
+        So in terms of n, the complexity of the algorithm is O(n^2).
+    5.  We can approximate the result in O(n) by applying the weighted function on a pixel x
+        on some constant neighbour area instead of using all the pixels in the boundary.
+        for every pixel x in the hole we can just use it's 4 or 8 neighbours, according to
+        the selected connectivity, and use them to calculate the filled value for x.
+        (Of course if one of x's neighbours is a missing pixel we ignore it). This gives us
+        a constant time for every pixel x and thus we get an approximate solution in O(n).
+        This is implemented in the function named: neighboursFillImageHole().
