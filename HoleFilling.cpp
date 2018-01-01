@@ -62,7 +62,7 @@
  * @def MISSING_VALUE -1
  * @brief A Macro that sets the value of a missing pixel.
  */
-#define MISSING_VALUE -1
+#define MISSING_VALUE (-1)
 
 /**
  * @def INITIAL_ROW 0
@@ -80,13 +80,25 @@
  * @def EPSILON_INITIAL -1
  * @brief A Macro that sets the initial value for the epsilon parameter.
  */
-#define EPSILON_INITIAL -1
+#define EPSILON_INITIAL (-1)
 
 /**
  * @def Z_INITIAL -1
  * @brief A Macro that sets the initial value for the z parameter.
  */
-#define Z_INITIAL -1
+#define Z_INITIAL (-1)
+
+/**
+ * @def DEFAULT_MARK_COLOR 1
+ * @brief A Macro that sets the default color value for boundary mark.
+ */
+#define DEFAULT_MARK_COLOR 1
+
+/**
+ * @def NORMALIZATION_FACTOR 255
+ * @brief A Macro that sets the value of the normalization factor of the image to the range [0,1].
+ */
+#define NORMALIZATION_FACTOR 255
 
 
 /*-----=  Program Arguments Functions  =-----*/
@@ -199,7 +211,7 @@ static Hole calculateHole(float **image, const int rows, const int cols,
     // Set data for the BFS algorithm.
     std::deque<Pixel> pixelQueue;
     // TODO: Change the visited array.
-    bool **visited = new bool *[rows];
+    auto **visited = new bool *[rows];
     for (int i = 0; i < rows; ++i)
     {
         visited[i] = new bool[cols];
@@ -228,7 +240,7 @@ static Hole calculateHole(float **image, const int rows, const int cols,
         // Get the pixel neighbours according the the pixel connectivity.
         currentPixel.setNeighbours(connectivity, rows, cols);
         // Traverse the neighbours.
-        for (Pixel neighbour : currentPixel.getNeighbours())
+        for (const Pixel &neighbour : currentPixel.getNeighbours())
         {
             int currentX = neighbour.getX();
             int currentY = neighbour.getY();
@@ -239,7 +251,7 @@ static Hole calculateHole(float **image, const int rows, const int cols,
                 if (image[currentX][currentY] == MISSING_VALUE)
                 {
                     // Add this pixel to the queue for next iterations.
-                    pixelQueue.push_back(Pixel(currentX, currentY));
+                    pixelQueue.emplace_back(currentX, currentY);
                 }
                 else
                 {
@@ -268,12 +280,12 @@ static Hole calculateHole(float **image, const int rows, const int cols,
  * @param rhs The second pixel.
  * @return The weighted value of the given pixels.
  */
-static float defaultWeightedFunction(const Pixel lhs, const Pixel rhs)
+static float defaultWeightedFunction(const Pixel &lhs, const Pixel &rhs)
 {
     double norm = std::pow(lhs.getX() - rhs.getX(), 2) + std::pow(lhs.getY() - rhs.getY(), 2);
     norm = std::sqrt(norm);
 
-    float weightValue = (float) (1 / (std::pow(norm, z) + epsilon));
+    auto weightValue = (float) (1 / (std::pow(norm, z) + epsilon));
     return weightValue;
 }
 
@@ -283,16 +295,16 @@ static float defaultWeightedFunction(const Pixel lhs, const Pixel rhs)
  * @param hole The hole in the image.
  * @param weightedFunction The weighted function used in the fill process.
  */
-static void fillImageHole(float ***image, const Hole hole,
-                          float (*weightedFunction)(const Pixel, const Pixel))
+static void fillImageHole(float ***image, const Hole &hole,
+                          float (*weightedFunction)(const Pixel&, const Pixel&))
 {
-    for (Pixel x : hole.getHolePixels())
+    for (const Pixel &x : hole.getHolePixels())
     {
         // For every pixel x in the hole we update it's value using the
         // weighted function and all the pixels in the hole boundary.
         float numerator = 0;
         float denominator = 0;
-        for (Pixel y : hole.getHoleBoundary())
+        for (const Pixel &y : hole.getHoleBoundary())
         {
             float yValue = (*image)[y.getX()][y.getY()];
             float weightedValue = weightedFunction(x, y);
@@ -311,10 +323,10 @@ static void fillImageHole(float ***image, const Hole hole,
  * @param hole The hole in the image.
  * @param weightedFunction The weighted function used in the fill process.
  */
-static void neighboursFillImageHole(float ***image, const Hole hole,
+static void neighboursFillImageHole(float ***image, const Hole &hole,
                                     float (*weightedFunction)(const Pixel, const Pixel))
 {
-    for (Pixel x : hole.getHolePixels())
+    for (const Pixel &x : hole.getHolePixels())
     {
         // For every pixel x in the hole we update it's value using the
         // weighted function and all the pixels in the hole boundary.
@@ -322,7 +334,7 @@ static void neighboursFillImageHole(float ***image, const Hole hole,
         float denominator = 0;
 
         assert(!x.getNeighbours().empty());
-        for (Pixel y : x.getNeighbours())
+        for (const Pixel &y : x.getNeighbours())
         {
             float yValue = (*image)[y.getX()][y.getY()];
             if (yValue == MISSING_VALUE)
@@ -343,9 +355,75 @@ static void neighboursFillImageHole(float ***image, const Hole hole,
 /*-----=  Image Handling Functions  =-----*/
 
 
-static float **convertImageToArray(const cv::Mat &image)
+/**
+ * @brief Receive an image from the given image path.
+ * @param imagePath The path of the image.
+ * @return A Mat object normalized to the range [0,1] of the image.
+ */
+static cv::Mat receiveImage(const char *imagePath)
 {
+    cv::Mat image = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+    if (image.empty())
+    {
+        // Invalid image argument.
+        std::cerr << "Error: invalid image" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    // Normalize image to the values in [0,1] range.
+    image.convertTo(image, CV_32F);
+    image = image / NORMALIZATION_FACTOR;
+    return image;
+}
 
+/**
+ * @brief Convert a given CV Mat image representation to a 2D-array.
+ * @param cvImage The given image to convert, represented as a CV Mat object with
+ *                values in the range [0,1].
+ * @param rows The number of rows in the image.
+ * @param cols The number of columns in the image.
+ * @return A 2D-array of type float representing the image.
+ */
+static float **convertImageToArray(cv::Mat &cvImage, const int rows, const int cols)
+{
+    auto **image = new float *[rows];
+    for (int i = 0; i < rows; ++i)
+    {
+        image[i] = new float[cols];
+        auto *cvP = cvImage.ptr<float>(i);
+        for (int j = 0; j < cols; ++j)
+        {
+            image[i][j] = cvP[j];
+        }
+    }
+
+    return image;
+}
+
+/**
+ * @brief Convert a given 2D-array to a CV Mat image representation.
+ * @param image The given image to convert, represented as a 2D-array with
+ *        values in the range [0,1].
+ * @param rows The number of rows in the image.
+ * @param cols The number of columns in the image.
+ * @return A CV Mat of type float representing the image.
+ */
+static cv::Mat convertArrayToImage(float **image, const int rows, const int cols)
+{
+    cv::Mat cvImage(rows, cols, CV_32F, image);
+    return cvImage;
+}
+
+/**
+ * @brief Mark the image hole boundaries of the given image.
+ * @param image A pointer to the image to mark.
+ * @param hole The hole in the image.
+ */
+static void markBoundaries(float ***image, const Hole &hole, const float markColor)
+{
+    for (const Pixel &x : hole.getHoleBoundary())
+    {
+        (*image)[x.getX()][x.getY()] = markColor;
+    }
 }
 
 /**
@@ -360,9 +438,44 @@ static void displayImage(const cv::Mat &image, const char *windowName)
     cv::waitKey(0);
 }
 
+/**
+ * @brief Display the results of the program.
+ * @param originalImage The original image with the hole in it.
+ * @param markedImage The original image with the boundary marked.
+ * @param filledImage The filled image.
+ */
+static void displayResults(const cv::Mat &originalImage, const cv::Mat &markedImage,
+                           const cv::Mat &filledImage)
+{
+    displayImage(originalImage, "Original");
+    displayImage(markedImage, "Boundary");
+    displayImage(filledImage, "Filled");
+}
 
-/*-----=  Cleanup Functions  =-----*/
 
+/*-----=  Resources Functions  =-----*/
+
+
+/**
+ * @brief Copy a given image.
+ * @param image The image to copy.
+ * @param rows The number of rows in that image.
+ * @param cols The number of columns in that image.
+ * @return
+ */
+static float **copyImage(float **image, const int rows, const int cols)
+{
+    auto **copiedImage = new float *[rows];
+    for (int i = 0; i < rows; ++i)
+    {
+        copiedImage[i] = new float[cols];
+        for (int j = 0; j < cols; ++j)
+        {
+            copiedImage[i][j] = image[i][j];
+            copiedImage[i][j] = image[i][j];
+        }
+    }
+}
 
 /**
  * @brief Clear memory allocation for the given image.
@@ -410,21 +523,14 @@ int main(int argc, char *argv[])
     assert(epsilon != EPSILON_INITIAL && z != Z_INITIAL);
     const int connectivity = std::stoi(connectivityArgument);
 
-    int rows = 250;
-    int cols = 250;
-    float **image = new float *[rows];
-    for (int i = 0; i < rows; ++i)
-    {
-        image[i] = new float[cols];
-        for (int j = 0; j < cols; ++j)
-        {
-            image[i][j] = 0;
-        }
-    }
-    image[1][1] = -1;
-    image[1][2] = -1;
-    image[2][2] = -1;
-    image[2][0] = -1;
+    // Read the given image and set up data.
+    cv::Mat cvImage = receiveImage(imagePath);
+    int rows = cvImage.rows;
+    int cols = cvImage.cols;
+
+    // Create a corresponding 2D-array of the image.
+    float **image = convertImageToArray(cvImage, rows, cols);
+    cv::Mat c = convertArrayToImage(image, rows, cols);
 
     try
     {
@@ -432,21 +538,23 @@ int main(int argc, char *argv[])
         Pixel missingPixel = findMissingPixel(image, rows, cols);
         // From this pixel calculate the hole using BFS.
         Hole hole = calculateHole(image, rows, cols, missingPixel, connectivity);
+
+        // Copy the original image and mark the boundaries.
+        auto **markedImage = copyImage(image, rows, cols);
+        markBoundaries(&markedImage, hole, DEFAULT_MARK_COLOR);
+        cv::Mat cvMarked = convertArrayToImage(markedImage, rows, cols);
+
         // Copy the original image and fill the copy.
-        float **filledImage = new float *[rows];
-        for (int i = 0; i < rows; ++i)
-        {
-            filledImage[i] = new float[cols];
-            for (int j = 0; j < cols; ++j)
-            {
-                filledImage[i][j] = image[i][j];
-            }
-        }
-        // Fill.
+        auto **filledImage = copyImage(image, rows, cols);
         fillImageHole(&filledImage, hole, defaultWeightedFunction);
+        cv::Mat cvFilled = convertArrayToImage(markedImage, rows, cols);
+
+        // Display results.
+        displayResults(cvImage, cvMarked, cvFilled);
 
         // Clear resources.
         clearResources(&filledImage, rows);
+        clearResources(&markedImage, rows);
         clearResources(&image, rows);
 
         return EXIT_SUCCESS;
