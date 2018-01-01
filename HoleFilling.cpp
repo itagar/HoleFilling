@@ -14,6 +14,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <cmath>
+#include <random>
 #include "Pixel.h"
 #include "Hole.h"
 #include "HoleException.h"
@@ -324,7 +325,7 @@ static void fillImageHole(float ***image, const Hole &hole,
  * @param weightedFunction The weighted function used in the fill process.
  */
 static void neighboursFillImageHole(float ***image, const Hole &hole,
-                                    float (*weightedFunction)(const Pixel, const Pixel))
+                                    float (*weightedFunction)(const Pixel&, const Pixel&))
 {
     for (const Pixel &x : hole.getHolePixels())
     {
@@ -409,7 +410,14 @@ static float **convertImageToArray(cv::Mat &cvImage, const int rows, const int c
  */
 static cv::Mat convertArrayToImage(float **image, const int rows, const int cols)
 {
-    cv::Mat cvImage(rows, cols, CV_32F, image);
+    cv::Mat cvImage(rows, cols, CV_32F);
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < cols; ++j)
+        {
+            cvImage.at<float>(i, j) = image[i][j];
+        }
+    }
     return cvImage;
 }
 
@@ -453,6 +461,71 @@ static void displayResults(const cv::Mat &originalImage, const cv::Mat &markedIm
 }
 
 
+/*-----=  Generate Hole Functions  =-----*/
+
+
+/**
+ * @brief Generates a random number from the range [lowerBound,upperBound].
+ * @param lowerBoundRow The lower bound of the range.
+ * @param upperBoundRow The upper bound of the range.
+ * @return a random integer from the range [lowerBound,upperBound].
+ */
+static int generateRandomNumber(const int lowerBound, const int upperBound)
+{
+    std::random_device                  rand_dev;
+    std::mt19937                        generator(rand_dev());
+    std::uniform_int_distribution<int>  dist(lowerBound, upperBound);
+    return dist(generator);
+}
+
+/**
+ * @brief Generates random hole in a shape of a rectangle.
+ * @param image The image to corrupt.
+ * @param rows The number of rows in the image.
+ * @param cols The number of columns in the image.
+ */
+static void generateRandomHole(float ***image, const int rows, const int cols)
+{
+    // Pick a random indices in the image.
+    const int randomRow1 = generateRandomNumber(INITIAL_ROW, rows - 1);
+    const int randomCol1 = generateRandomNumber(INITIAL_ROW, cols - 1);
+    const int randomRow2 = generateRandomNumber(INITIAL_ROW, rows - 1);
+    const int randomCol2 = generateRandomNumber(INITIAL_ROW, cols - 1);
+    // Set top left and bottom right points.
+    const int topLeftRow = (randomRow1 < randomRow2) ? randomRow1 : randomRow2;
+    const int topLeftCol = (randomCol1 < randomCol2) ? randomCol1 : randomCol2;
+    const int bottomRightRow = (randomRow1 < randomRow2) ? randomRow2 : randomRow1;
+    const int bottomRightCol = (randomCol1 < randomCol2) ? randomCol2 : randomCol1;
+    // Corrupt the image.
+    int currentRow = topLeftRow;
+    while (currentRow <= bottomRightRow)
+    {
+        int currentCol = topLeftCol;
+        while (currentCol <= bottomRightCol)
+        {
+            (*image)[currentRow][currentCol] = MISSING_VALUE;
+            currentCol++;
+        }
+        currentRow++;
+    }
+}
+
+/**
+ * @brief Generate hole in the image from a given array of pixels.
+ * @param image The image to corrupt.
+ * @param holePixels The array of pixels which describe the hole.
+ * @param holeSize The number of pixels in the hole.
+ */
+static void generateDefinedHole(float ***image, const Pixel *holePixels, const int holeSize)
+{
+    for (int i = 0; i < holeSize; ++i)
+    {
+        Pixel pixel = holePixels[i];
+        (*image)[pixel.getX()][pixel.getY()] = MISSING_VALUE;
+    }
+}
+
+
 /*-----=  Resources Functions  =-----*/
 
 
@@ -475,6 +548,7 @@ static float **copyImage(float **image, const int rows, const int cols)
             copiedImage[i][j] = image[i][j];
         }
     }
+    return copiedImage;
 }
 
 /**
@@ -524,13 +598,22 @@ int main(int argc, char *argv[])
     const int connectivity = std::stoi(connectivityArgument);
 
     // Read the given image and set up data.
-    cv::Mat cvImage = receiveImage(imagePath);
-    int rows = cvImage.rows;
-    int cols = cvImage.cols;
+    cv::Mat originalImage = receiveImage(imagePath);
+    int rows = originalImage.rows;
+    int cols = originalImage.cols;
 
     // Create a corresponding 2D-array of the image.
-    float **image = convertImageToArray(cvImage, rows, cols);
-    cv::Mat c = convertArrayToImage(image, rows, cols);
+    float **image = convertImageToArray(originalImage, rows, cols);
+    // Generate hole in this image.
+    Pixel pixelArray[20] = {Pixel(20, 20), Pixel(20, 21), Pixel(20, 22),
+                            Pixel(20, 23), Pixel(20, 24), Pixel(21, 20),
+                            Pixel(21, 21), Pixel(21, 22), Pixel(21, 23),
+                            Pixel(21, 24), Pixel(22, 20), Pixel(22, 21),
+                            Pixel(22, 22), Pixel(22, 23), Pixel(22, 24),
+                            Pixel(23, 20), Pixel(23, 21), Pixel(23, 22),
+                            Pixel(23, 23), Pixel(24, 20)};
+    generateDefinedHole(&image, pixelArray, 20);
+    cv::Mat cvImage = convertArrayToImage(image, rows, cols);
 
     try
     {
@@ -547,7 +630,7 @@ int main(int argc, char *argv[])
         // Copy the original image and fill the copy.
         auto **filledImage = copyImage(image, rows, cols);
         fillImageHole(&filledImage, hole, defaultWeightedFunction);
-        cv::Mat cvFilled = convertArrayToImage(markedImage, rows, cols);
+        cv::Mat cvFilled = convertArrayToImage(filledImage, rows, cols);
 
         // Display results.
         displayResults(cvImage, cvMarked, cvFilled);

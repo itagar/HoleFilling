@@ -29,11 +29,15 @@ class Pixel
 {
 public:
     /**
+     * @brief A Default Constructor for the Pixel which sets a pixel at (0,0).
+     */
+    Pixel();
+
+    /**
      * @brief A Constructor for the Pixel, which receive 2 coordinates
      *        and create a new Pixel object with the given coordinates.
      * @param x The X coordinate in the plane.
      * @param y The Y coordinate in the plane.
-     * @param intensity The pixel intensity.
      */
     Pixel(const int x, const int y);
 

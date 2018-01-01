@@ -30,6 +30,13 @@
 
 /*-----=  Class Implementation  =-----*/
 
+/**
+ * @brief A Default Constructor for the Pixel which sets a pixel at (0,0).
+ */
+Pixel::Pixel()  : _x(0), _y(0)
+{
+
+}
 
 /**
  * @brief A Constructor for the Pixel, which receive 2 coordinates
@@ -71,13 +78,13 @@ void Pixel::setNeighbours(const int connectivity, const int maxX, const int maxY
         if (_x + mask >= 0 && _x + mask < maxX)
         {
             // If this neighbour is in the image.
-            _neighbours.push_back(Pixel(_x + mask, _y));
+            _neighbours.emplace_back(_x + mask, _y);
         }
 
         if (_y + mask >= 0 && _y + mask < maxY)
         {
             // If this neighbour is in the image.
-            _neighbours.push_back(Pixel(_x, _y + mask));
+            _neighbours.emplace_back(_x, _y + mask);
         }
     }
 
@@ -91,13 +98,13 @@ void Pixel::setNeighbours(const int connectivity, const int maxX, const int maxY
                 if (_y + mask >= 0 && _y + mask < maxY)
                 {
                     // If this neighbour is in the image.
-                    _neighbours.push_back(Pixel(_x + mask, _y + mask));
+                    _neighbours.emplace_back(_x + mask, _y + mask);
                 }
 
                 if (_y - mask >= 0 && _y - mask < maxY)
                 {
                     // If this neighbour is in the image.
-                    _neighbours.push_back(Pixel(_x + mask, _y - mask));
+                    _neighbours.emplace_back(_x + mask, _y - mask);
                 }
             }
         }

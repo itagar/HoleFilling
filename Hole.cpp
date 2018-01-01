@@ -24,13 +24,13 @@
 std::ostream& operator<<(std::ostream &os, const Hole &hole)
 {
     os << "Hole:" << std::endl;
-    for (Pixel pixel : hole.getHolePixels())
+    for (const Pixel &pixel : hole.getHolePixels())
     {
         os << pixel << '\t';
     }
     os << std::endl;
     os << "Hole Boundary:" << std::endl;
-    for (Pixel pixel : hole.getHoleBoundary())
+    for (const Pixel &pixel : hole.getHoleBoundary())
     {
         os << pixel << '\t';
     }

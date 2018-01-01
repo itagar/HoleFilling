@@ -28,12 +28,35 @@ Implementation Details:
 	is thrown and the program ends. Now that we have the pixels that make up the hole
 	and it's boundary we simply apply the fill as described in the exercise description.
 
-	Note that I created a Deep-Copy of the original image in order that the fill procedure
+	Note that I used Deep-Copy of the images in order that the marking/fill procedure
 	will not alter the original image, in case the original image can be modified we could
-	skip this copy and pass the original image as a parameter to the fill function.
+	skip this copies and pass the original image as a parameter to the marking/fill function.
 
 	For the ease of implementation I've created a Pixel class that encapsulate a single
 	pixel in the image, as well as Hole class which represent a hole in the image.
+
+	Regarding the hole itself. Any given image path that will be opened by openCV won't
+	contain negative values. After consulting with the recruiting team from Lightricks,
+	I've simply created a function which corrupt the image, and thus manually creating
+	a hole with missing pixels in the image, and then continue the program procedure
+	as described above. There is a simple hole generator which acts randomly and create
+	a random hole at a random location in a shape of rectangle. Also there is a more
+	specified hole generator function which receives an array of Pixels that describe
+	the hole. (When using the random generator, the running time of the program is
+	increased significantly).
+
+    An example of using generateRandomHole:
+        generateRandomHole(&image, rows, cols);
+
+	An example of using generateDefinedHole:
+        Pixel pixelArray[20] = {Pixel(20, 20), Pixel(20, 21), Pixel(20, 22),
+                                Pixel(20, 23), Pixel(20, 24), Pixel(21, 20),
+                                Pixel(21, 21), Pixel(21, 22), Pixel(21, 23),
+                                Pixel(21, 24), Pixel(22, 20), Pixel(22, 21),
+                                Pixel(22, 22), Pixel(22, 23), Pixel(22, 24),
+                                Pixel(23, 20), Pixel(23, 21), Pixel(23, 22),
+                                Pixel(23, 23), Pixel(24, 20)};
+        generateDefinedHole(&image, pixelArray, 20);
 	
 
 Answers:

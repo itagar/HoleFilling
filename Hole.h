@@ -58,13 +58,13 @@ public:
      * @brief Adds new pixel to the Hole.
      * @param pixel The pixel to add.
      */
-    void addHolePixels(const Pixel pixel) { _holePixels.push_back(pixel); }
+    void addHolePixels(const Pixel &pixel) { _holePixels.push_back(pixel); }
 
     /**
      * @brief Adds new pixel to the Hole's boundary.
      * @param pixel The pixel to add.
      */
-    void addHoleBoundary(const Pixel pixel) { _holeBoundary.push_back(pixel); }
+    void addHoleBoundary(const Pixel &pixel) { _holeBoundary.push_back(pixel); }
 
 private:
     holeSet _holePixels;  // The Hole's pixels.
