@@ -1,18 +1,18 @@
-========================================================
-=                     Hole Filling                     =
-=                      Itai Tagar                      =
-========================================================
+============================================================================
+=                               Hole Filling                               =
+=                                Itai Tagar                                =
+============================================================================
 
 
 Files:
-	HoleFilling.cpp		- The Main File which runs the program.
-	Pixel.h			    - A header file for the Pixel Class.
-	Pixel.cpp		    - A file for the Pixel Class implementation.
-	Hole.h			    - A header file for the Hole Class.
-	Hole.cpp		    - A file for the Hole Class implementation.
+	HoleFilling.cpp		- The Main file which runs the program.
+	Pixel.h			- A header file for the Pixel Class.
+	Pixel.cpp		- A file for the Pixel Class implementation.
+	Hole.h			- A header file for the Hole Class.
+	Hole.cpp		- A file for the Hole Class implementation.
 	HoleException.h		- Exception Classes for the Hole Filling program.
-	Makefile		    - Makefile for this program.
-	README			    - This File.
+	Makefile		- Makefile for this program.
+	README			- This File.
 
 
 Implementation Details:
@@ -43,34 +43,36 @@ Implementation Details:
 	a random hole at a random location in a shape of rectangle. Also there is a more
 	specified hole generator function which receives an array of Pixels that describe
 	the hole. (When using the random generator, the running time of the program is
-	increased significantly).
+	increased significantly). NOTE: In the main function there is an example for running
+	the hole generator with an array of predefined Pixels, and there is a comment line
+	which calls for the random generator.
 
-    An example of using generateRandomHole:
-        generateRandomHole(&image, rows, cols);
+	An example of using generateRandomHole:
+		generateRandomHole(&image, rows, cols);
 
 	An example of using generateDefinedHole:
-        Pixel pixelArray[20] = {Pixel(20, 20), Pixel(20, 21), Pixel(20, 22),
-                                Pixel(20, 23), Pixel(20, 24), Pixel(21, 20),
-                                Pixel(21, 21), Pixel(21, 22), Pixel(21, 23),
-                                Pixel(21, 24), Pixel(22, 20), Pixel(22, 21),
-                                Pixel(22, 22), Pixel(22, 23), Pixel(22, 24),
-                                Pixel(23, 20), Pixel(23, 21), Pixel(23, 22),
-                                Pixel(23, 23), Pixel(24, 20)};
-        generateDefinedHole(&image, pixelArray, 20);
+		Pixel pixelArray[20] = {Pixel(20, 20), Pixel(20, 21), Pixel(20, 22),
+		                        Pixel(20, 23), Pixel(20, 24), Pixel(21, 20),
+		                        Pixel(21, 21), Pixel(21, 22), Pixel(21, 23),
+		                        Pixel(21, 24), Pixel(22, 20), Pixel(22, 21),
+		                        Pixel(22, 22), Pixel(22, 23), Pixel(22, 24),
+		                        Pixel(23, 20), Pixel(23, 21), Pixel(23, 22),
+		                        Pixel(23, 23), Pixel(24, 20)};
+		generateDefinedHole(&image, pixelArray, 20);
 	
 
 Answers:
-    4.  If there are m boundary pixels and n pixels inside the hole, then our algorithm
-        perform for each pixel x inside the hole the value change according to the
-        weighted formula. In this formula we have to iterate through every pixel in the
-        boundary. So for every pixel in the hole we do O(m) calculations, and we have n
-        pixels in the hole so we get total time of O(m*n).
-        We note that m = O(n) since m <= 4*n in 4-connectivity and m <= 8*n in 8-connectivity
-        So in terms of n, the complexity of the algorithm is O(n^2).
-    5.  We can approximate the result in O(n) by applying the weighted function on a pixel x
-        on some constant neighbour area instead of using all the pixels in the boundary.
-        for every pixel x in the hole we can just use it's 4 or 8 neighbours, according to
-        the selected connectivity, and use them to calculate the filled value for x.
-        (Of course if one of x's neighbours is a missing pixel we ignore it). This gives us
-        a constant time for every pixel x and thus we get an approximate solution in O(n).
-        This is implemented in the function named: neighboursFillImageHole().
+	4.	If there are m boundary pixels and n pixels inside the hole, then our algorithm
+		perform for each pixel x inside the hole the value change according to the
+		weighted formula. In this formula we have to iterate through every pixel in the
+		boundary. So for every pixel in the hole we do O(m) calculations, and we have n
+		pixels in the hole so we get total time of O(m*n).
+		We note that m = O(n) since m <= 4*n in 4-connectivity and m <= 8*n in 8-connectivity
+		So in terms of n, the complexity of the algorithm is O(n^2).
+	5.	We can approximate the result in O(n) by applying the weighted function on a pixel x
+		on some constant neighbour area instead of using all the pixels in the boundary.
+		for every pixel x in the hole we can just use it's 4 or 8 neighbours, according to
+		the selected connectivity, and use them to calculate the filled value for x.
+		(Of course if one of x's neighbours is a missing pixel we ignore it). This gives us
+		a constant time for every pixel x and thus we get an approximate solution in O(n).
+		This is implemented in the function named: neighboursFillImageHole().

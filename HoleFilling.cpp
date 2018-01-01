@@ -101,6 +101,12 @@
  */
 #define NORMALIZATION_FACTOR 255
 
+/**
+ * @def PIXEL_ARRAY_EXAMPLE
+ * @brief A Macro that sets the example for pixel array.
+ */
+#define PIXEL_ARRAY_EXAMPLE {Pixel(20, 20), Pixel(20, 21), Pixel(20, 22), Pixel(20, 23), Pixel(20, 24), Pixel(21, 20), Pixel(21, 21), Pixel(21, 22), Pixel(21, 23), Pixel(21, 24), Pixel(22, 20), Pixel(22, 21), Pixel(22, 22), Pixel(22, 23), Pixel(22, 24), Pixel(23, 20), Pixel(23, 21), Pixel(23, 22), Pixel(23, 23), Pixel(24, 20)}
+
 
 /*-----=  Program Arguments Functions  =-----*/
 
@@ -211,7 +217,7 @@ static Hole calculateHole(float **image, const int rows, const int cols,
 
     // Set data for the BFS algorithm.
     std::deque<Pixel> pixelQueue;
-    // TODO: Change the visited array.
+
     auto **visited = new bool *[rows];
     for (int i = 0; i < rows; ++i)
     {
@@ -444,6 +450,7 @@ static void displayImage(const cv::Mat &image, const char *windowName)
     cv::namedWindow(windowName, CV_WINDOW_NORMAL);
     cv::imshow(windowName, image);
     cv::waitKey(0);
+    cv::destroyWindow(windowName);
 }
 
 /**
@@ -497,16 +504,12 @@ static void generateRandomHole(float ***image, const int rows, const int cols)
     const int bottomRightRow = (randomRow1 < randomRow2) ? randomRow2 : randomRow1;
     const int bottomRightCol = (randomCol1 < randomCol2) ? randomCol2 : randomCol1;
     // Corrupt the image.
-    int currentRow = topLeftRow;
-    while (currentRow <= bottomRightRow)
+    for (int currentRow = topLeftRow; currentRow <= bottomRightRow; ++currentRow)
     {
-        int currentCol = topLeftCol;
-        while (currentCol <= bottomRightCol)
+        for (int currentCol = topLeftCol; currentCol <= bottomRightCol; ++currentCol)
         {
             (*image)[currentRow][currentCol] = MISSING_VALUE;
-            currentCol++;
         }
-        currentRow++;
     }
 }
 
@@ -604,14 +607,11 @@ int main(int argc, char *argv[])
 
     // Create a corresponding 2D-array of the image.
     float **image = convertImageToArray(originalImage, rows, cols);
+
     // Generate hole in this image.
-    Pixel pixelArray[20] = {Pixel(20, 20), Pixel(20, 21), Pixel(20, 22),
-                            Pixel(20, 23), Pixel(20, 24), Pixel(21, 20),
-                            Pixel(21, 21), Pixel(21, 22), Pixel(21, 23),
-                            Pixel(21, 24), Pixel(22, 20), Pixel(22, 21),
-                            Pixel(22, 22), Pixel(22, 23), Pixel(22, 24),
-                            Pixel(23, 20), Pixel(23, 21), Pixel(23, 22),
-                            Pixel(23, 23), Pixel(24, 20)};
+    // generateRandomHole(&image, rows, cols);
+    // THIS IS MERELY AN EXAMPLE, COMMENT THIS IF NOT NEEDED.
+    Pixel pixelArray[20] = PIXEL_ARRAY_EXAMPLE;
     generateDefinedHole(&image, pixelArray, 20);
     cv::Mat cvImage = convertArrayToImage(image, rows, cols);
 
@@ -639,7 +639,11 @@ int main(int argc, char *argv[])
         clearResources(&filledImage, rows);
         clearResources(&markedImage, rows);
         clearResources(&image, rows);
-
+        originalImage.release();
+        cvImage.release();
+        cvMarked.release();
+        cvFilled.release();
+        cv::destroyAllWindows();
         return EXIT_SUCCESS;
     }
     catch (HoleException& exception)
