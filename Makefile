@@ -1,6 +1,6 @@
 CXX= g++
 CXXFLAGS= -c -Wextra -Wall -Wvla -std=c++11 -DNDEBUG
-CODEFILES= HoleFilling.tar HoleFilling.hpp Pixel.cpp Pixel.h Hole.cpp Hole.h HoleException.h Makefile README
+CODEFILES= HoleFilling.tar HoleFilling.cpp Pixel.cpp Pixel.h Hole.cpp Hole.h HoleException.h Makefile README
 
 
 # Default
